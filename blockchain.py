@@ -21,10 +21,9 @@ class RedeBlockchain:
     def adicionar_bloco(self, novo_bloco):
         """ Valida e insere um novo bloco na corrente. """
         ultimo_bloco = self.obter_ultimo_bloco()
-
+        print("HASH ANTERIOR ULTIMO BLOCO: ", ultimo_bloco.hash_anterior)
         # 1. Verificação de continuidade
         if novo_bloco.hash_anterior != ultimo_bloco.hash:
-            print("❌ Erro: O hash anterior não coincide.")
             return False
         
         # 2. Verificação de integridade
@@ -42,7 +41,6 @@ class RedeBlockchain:
         # Limpar as transações pendentes que agora já estão no bloco
         ids_confirmados = {tx.id for tx in novo_bloco.transacoes if hasattr(tx, 'id')}
         self.transacoes_pendentes = [t for t in self.transacoes_pendentes if t.id not in ids_confirmados]
-        
         return True
 
     def verificar_rede_valida(self):
@@ -107,3 +105,50 @@ class RedeBlockchain:
                 saldo -= getattr(tx, 'quantia', 0)
                 
         return saldo
+    
+    def replace_chain(self, nova_corrente):
+        """Substitui a corrente local por uma nova se for válida e mais longa."""
+        # 1. Verifica se a nova corrente é realmente maior
+        if len(nova_corrente) <= len(self.corrente):
+            return False
+            
+        # 2. Valida a integridade da nova corrente
+        if not self.validar_outra_corrente(nova_corrente):
+            return False
+            
+        # 3. Substitui a corrente
+        self.corrente = nova_corrente
+        
+        # 4. Atualiza as transações pendentes
+        # Removemos da fila o que já foi confirmado na nova corrente
+        ids_confirmados = set()
+        for bloco in self.corrente:
+            for tx in bloco.transacoes:
+                # Tenta pegar o ID seja objeto ou dicionário
+                if hasattr(tx, 'id'):
+                    ids_confirmados.add(tx.id)
+                elif isinstance(tx, dict):
+                    ids_confirmados.add(tx.get('id'))
+                    
+        self.transacoes_pendentes = [
+            tx for tx in self.transacoes_pendentes 
+            if getattr(tx, 'id', None) not in ids_confirmados
+        ]
+        
+        return True
+
+    def validar_outra_corrente(self, corrente_externa):
+        """Método auxiliar para validar correntes recebidas de outros nós."""
+        for i in range(1, len(corrente_externa)):
+            bloco_atual = corrente_externa[i]
+            bloco_anterior = corrente_externa[i-1]
+
+            if bloco_atual.hash != bloco_atual.gerar_hash():
+                return False
+
+            if bloco_atual.hash_anterior != bloco_anterior.hash:
+                return False
+
+            if not bloco_atual.hash.startswith("0" * self.dificuldade):
+                return False
+        return True

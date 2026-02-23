@@ -71,8 +71,8 @@ class NoDaRede:
                 if ultimo.hash != self.blockchain.obter_ultimo_bloco().hash:
                     print("🔄 A rede atualizou primeiro. Reiniciando tentativa...")
                     continue
-
-                if self.blockchain.adicionar_bloco(novo):
+                resultado = self.blockchain.adicionar_bloco(novo)
+                if resultado:
                     print(f"💎 Sucesso! Bloco {novo.indice} criado.")
                     self.espalhar_mensagem('NOVO_BLOCO', novo.formatar_para_dict())
 
