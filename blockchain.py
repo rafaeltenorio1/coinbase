@@ -21,7 +21,6 @@ class RedeBlockchain:
     def adicionar_bloco(self, novo_bloco):
         """ Valida e insere um novo bloco na corrente. """
         ultimo_bloco = self.obter_ultimo_bloco()
-        print("HASH ANTERIOR ULTIMO BLOCO: ", ultimo_bloco.hash_anterior)
         # 1. Verificação de continuidade
         if novo_bloco.hash_anterior != ultimo_bloco.hash:
             return False
@@ -85,6 +84,7 @@ class RedeBlockchain:
                 # Se for um objeto Transacao, usamos getattr para segurança
                 # Se for um dicionário (JSON), usamos o .get()
                 if isinstance(tx, dict):
+                    print(tx)
                     de = tx.get('origem') or tx.get('remetente')
                     para = tx.get('destino') or tx.get('destinatario')
                     valor = tx.get('valor') or tx.get('quantia', 0)
@@ -92,6 +92,8 @@ class RedeBlockchain:
                     de = getattr(tx, 'remetente', None)
                     para = getattr(tx, 'destinatario', None)
                     valor = getattr(tx, 'quantia', 0)
+                    print(de, para, valor)
+
 
                 if de == endereco:
                     saldo -= valor

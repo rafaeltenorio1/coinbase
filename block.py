@@ -53,14 +53,14 @@ class Bloco:
         print(f"✅ Bloco {self.indice} minerado! Hash: {self.hash}")
 
     def formatar_para_dict(self):
-        """ Converte o objeto completo para dicionário (incluindo o hash final). """
+        """ Converte o objeto completo para dicionário usando o padrão da rede (Inglês). """
         return {
-            "indice": self.indice,
-            "hash_anterior": self.hash_anterior,
-            "transacoes": [tx.formatar_para_dict() if hasattr(tx, 'formatar_para_dict') else tx for tx in self.transacoes],
+            "index": self.indice,
+            "previous_hash": self.hash_anterior,
+            "transactions": [tx.formatar_para_dict() if hasattr(tx, 'formatar_para_dict') else tx for tx in self.transacoes],
             "nonce": self.nonce,
             "timestamp": self.timestamp,
-            "hash": self.hash # Agora sim, o hash já existe
+            "hash": self.hash
         }
 
     @staticmethod
