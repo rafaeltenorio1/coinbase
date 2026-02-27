@@ -64,7 +64,7 @@ def main():
                     sucesso = meu_no.nova_transacao(f"{meu_no.host}:{meu_no.porta}", destino, valor)
                     if sucesso:
                         print("✅ Transação enviada para a fila de espera!")
-                        meu_no.espalhar_mensagem('NOVA_TRANSACAO', sucesso.formatar_para_dict())
+                        meu_no.espalhar_mensagem('NEW_TRANSACTION', sucesso.formatar_para_dict())
                 except ValueError:
                     print("❌ Valor inválido.")
 
