@@ -1,10 +1,15 @@
 import argparse
 import sys
-import time
 from node import NoDaRede
 
+# Importamos a classe da interface que criámos no outro ficheiro
+from interface import BlockchainGUI 
+
 def processar_vizinhos(texto_vizinhos):
-    """ Transforma a lista de texto 'host:porta' numa lista real para o Python. """
+    """ 
+    Transforma a lista de texto 'host:porta' numa lista real para o Python. 
+    Mantemos esta função aqui pois trata de configurações de inicialização.
+    """
     if not texto_vizinhos:
         return set()
     
@@ -18,75 +23,32 @@ def processar_vizinhos(texto_vizinhos):
         sys.exit(1)
     return lista_final
 
-def exibir_menu():
-    print("\n--- 🌐 COMANDOS DA ESTAÇÃO ---")
-    print("[1] Ver Saldo")
-    print("[2] Ver Blocos (Corrente)")
-    print("[3] Enviar Moedas")
-    print("[4] Ligar/Desligar Mineração")
-    print("[0] Sair")
-    print("------------------------------")
-
 def main():
+    """ Função principal que une o Nó (Backend) com a Interface (Frontend) """
+    
+    # 1. Lemos os argumentos passados no terminal (ex: --porta 5000)
     parser = argparse.ArgumentParser(description="Lançar um Nó da Rede Blockchain")
     parser.add_argument("--ip", default="localhost", help="IP para o servidor")
     parser.add_argument("--porta", type=int, required=True, help="Porta para escutar")
     parser.add_argument("--conectar", help="Lista de vizinhos iniciais (host:porta,host:porta)")
-    
     args = parser.parse_args()
 
-    # Criamos e iniciamos o nosso Nó
+    # 2. Preparamos as ligações
     vizinhos_iniciais = processar_vizinhos(args.conectar)
+    
+    # 3. Criamos e iniciamos o nosso Nó da Rede (o "Motor" da aplicação)
     meu_no = NoDaRede(args.ip, args.porta, vizinhos_iniciais)
+    meu_no.iniciar()
 
-    try:
-        meu_no.iniciar()
-        
-        while True:
-            exibir_menu()
-            opcao = input("Escolha uma opção: ")
-
-            if opcao == "1":
-                endereco = input("Introduza o endereço (ex: localhost:5000): ")
-                saldo = meu_no.blockchain.consultar_saldo(endereco)
-                print(f"💰 Saldo de {endereco}: {saldo} moedas")
-
-            elif opcao == "2":
-                print(f"\n--- 🧱 CORRENTE ATUAL ({len(meu_no.blockchain.corrente)} blocos) ---")
-                for bloco in meu_no.blockchain.corrente:
-                    print(f"Bloco #{bloco.indice} | Hash: {bloco.hash[:15]}... | Anterior: {bloco.hash_anterior[:15]}...")
-
-            elif opcao == "3":
-                destino = input("Destinatário (host:porta): ")
-                try:
-                    valor = float(input("Quantia: "))
-                    # Criamos a transação e espalhamos pela rede
-                    sucesso = meu_no.nova_transacao(f"{meu_no.host}:{meu_no.porta}", destino, valor)
-                    if sucesso:
-                        print("✅ Transação enviada para a fila de espera!")
-                        meu_no.espalhar_mensagem('NEW_TRANSACTION', sucesso.formatar_para_dict())
-                except ValueError:
-                    print("❌ Valor inválido.")
-
-            elif opcao == "4":
-                if meu_no.minerando:
-                    meu_no.minerando = False
-                    print("🛑 Mineração interrompida.")
-                else:
-                    meu_no.iniciar_mineracao()
-
-            elif opcao == "0":
-                raise KeyboardInterrupt
-
-            else:
-                print("⚠️ Opção desconhecida.")
-
-            time.sleep(0.5)
-
-    except KeyboardInterrupt:
-        print("\n\n🛑 A desligar a estação... Até à próxima!")
-        meu_no.parar()
-        sys.exit(0)
+    # 4. Criamos e iniciamos a Interface Gráfica (a "Carroçaria" da aplicação)
+    print("🎨 A iniciar a Interface Gráfica...")
+    app = BlockchainGUI(meu_no)
+    
+    # Garantimos que, se o utilizador fechar a janela no [X], o nó também se desliga em segurança
+    app.protocol("WM_DELETE_WINDOW", app.on_closing)
+    
+    # Mantém a janela aberta e a funcionar
+    app.mainloop()
 
 if __name__ == "__main__":
     main()
